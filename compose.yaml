@@ -1,0 +1,34 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: db
+      DB_USER: app_user
+      DB_PASSWORD: ${DB_PASSWORD:-change_me}
+      DB_NAME: jewelry_store
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: jewelry_store
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-change_me}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change_me_root}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db_data:
