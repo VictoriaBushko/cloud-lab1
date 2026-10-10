@@ -32,7 +32,7 @@ app.get('/api/button-click', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'Сервер працює! v2', 
+    message: 'Сервер працює! v3', 
     timestamp: new Date().toISOString() 
   });
 });
