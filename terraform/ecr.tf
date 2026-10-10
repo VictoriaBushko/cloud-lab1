@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "app" {
-  name         = "cloud-lab1-api"
+  name         = "${var.project}-api"
   force_delete = true
 
   image_scanning_configuration {

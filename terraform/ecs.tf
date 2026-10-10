@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/cloud-lab1"
+  name              = "/ecs/${var.project}"
   retention_in_days = 7
 }
 
@@ -25,7 +25,7 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
 }
 
 resource "aws_ecs_cluster" "main" {
-  name = "cloud-lab1"
+  name = var.project
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -52,15 +52,18 @@ resource "aws_ecs_task_definition" "app" {
         { name = "PORT", value = "3001" },
         { name = "DB_HOST", value = aws_db_instance.main.address },
         { name = "DB_USER", value = aws_db_instance.main.username },
-        { name = "DB_NAME", value = aws_db_instance.main.db_name },
-        { name = "DB_PASSWORD", value = random_password.db.result }
+        { name = "DB_NAME", value = aws_db_instance.main.db_name }
+      ]
+
+      secrets = [
+        { name = "DB_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn }
       ]
 
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
-          "awslogs-region"        = "eu-central-1"
+          "awslogs-region"        = var.region
           "awslogs-stream-prefix" = "app"
         }
       }
