@@ -94,5 +94,5 @@ resource "aws_ecs_service" "app" {
     ignore_changes = [task_definition]
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.http, terraform_data.initial_image]
 }
