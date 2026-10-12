@@ -12,6 +12,7 @@ REST API для інтернет-магазину коштовностей. Бе
 - `GET /api/products` — список товарів (фільтри: type, carat, price, search)
 - `GET /api/products/:id` — товар за id
 - `POST /api/products` — додати товар
+- `GET /api-docs` — Swagger UI з документацією API (OpenAPI 3.0)
 
 ## Структура
 
