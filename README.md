@@ -49,4 +49,4 @@ terraform init
 terraform apply
 ```
 
-Після `apply` треба один раз запустити workflow Deploy у вкладці Actions, щоб образ потрапив в ECR. Далі кожен пуш у `main` збирає образ (тег — хеш коміту) і оновлює сервіс. Вхід в AWS з GitHub Actions іде через OIDC. Видалити все: `terraform destroy`.
+Кожен пуш у `main` збирає образ (тег — хеш коміту) і оновлює сервіс. Вхід в AWS з GitHub Actions іде через OIDC. Видалити все: `terraform destroy`.
