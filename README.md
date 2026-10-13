@@ -49,4 +49,4 @@ terraform init
 terraform apply
 ```
 
-Кожен пуш у `main` збирає образ (тег — хеш коміту) і оновлює сервіс. Вхід в AWS з GitHub Actions іде через OIDC. Видалити все: `terraform destroy`.
+Перший образ збирається і публікується в ECR автоматично під час `apply`. Далі кожен пуш у `main` збирає образ (тег — хеш коміту) і оновлює сервіс. Вхід в AWS з GitHub Actions іде через OIDC. Видалити все: `terraform destroy`.
