@@ -26,6 +26,11 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
 
 resource "aws_ecs_cluster" "main" {
   name = var.project
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -91,7 +96,7 @@ resource "aws_ecs_service" "app" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lb_listener.http, terraform_data.initial_image]
