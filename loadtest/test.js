@@ -1,5 +1,8 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { Rate } from 'k6/metrics';
+
+const cacheHit = new Rate('cache_hit_ratio');
 
 export const options = {
   stages: [
@@ -8,6 +11,19 @@ export const options = {
     { duration: '2m', target: 0 },
   ],
   summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
+};
+
+const readParams = {
+  headers: __ENV.NOCACHE ? { 'Cache-Control': 'no-cache' } : {},
+  tags: { name: 'GET /api/products/:id' },
+};
+
+const read = (url) => {
+  const res = http.get(url, readParams);
+  check(res, { 'read 200': (r) => r.status === 200 });
+  if (!__ENV.NOCACHE) {
+    cacheHit.add(res.headers['X-Cache'] === 'HIT');
+  }
 };
 
 export default function () {
@@ -20,6 +36,7 @@ export default function () {
   });
   const created = http.post(base + '/api/products', body, {
     headers: { 'Content-Type': 'application/json' },
+    tags: { name: 'POST /api/products' },
   });
   const ok = check(created, { 'created 201': (r) => r.status === 201 });
   if (!ok) {
@@ -27,12 +44,9 @@ export default function () {
   }
 
   const id = created.json('id');
-  const own = http.get(base + '/api/products/' + id);
-  check(own, { 'own product 200': (r) => r.status === 200 });
+  read(base + '/api/products/' + id);
 
   for (let i = 1; i <= 8; i++) {
-    const other = Math.max(1, id - i);
-    const res = http.get(base + '/api/products/' + other);
-    check(res, { 'read 200': (r) => r.status === 200 });
+    read(base + '/api/products/' + Math.max(1, id - i));
   }
 }

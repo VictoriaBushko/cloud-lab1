@@ -1,4 +1,5 @@
 const Product = require('../db/Product');
+const cache = require('../config/cache');
 
 const getProducts = async (req, res) => {
   try {
@@ -31,6 +32,17 @@ const getProducts = async (req, res) => {
 
 const getProductById = async (req, res) => {
   try {
+    const key = 'product:' + req.params.id;
+    const bypass = req.get('Cache-Control') === 'no-cache';
+
+    if (!bypass) {
+      const cached = await cache.get(key);
+      if (cached) {
+        res.set('X-Cache', 'HIT');
+        return res.json(cached);
+      }
+    }
+
     const product = await Product.findById(req.params.id);
     
     if (!product) {
@@ -40,6 +52,11 @@ const getProductById = async (req, res) => {
       });
     }
 
+    if (!bypass) {
+      await cache.set(key, product);
+    }
+
+    res.set('X-Cache', bypass ? 'BYPASS' : 'MISS');
     res.json(product);
   } catch (error) {
     console.error('Помилка отримання товару:', error);
