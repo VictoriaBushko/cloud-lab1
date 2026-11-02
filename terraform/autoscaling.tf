@@ -4,6 +4,10 @@ resource "aws_appautoscaling_target" "app" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
   min_capacity       = 1
   max_capacity       = 3
+
+  lifecycle {
+    ignore_changes = [min_capacity, max_capacity]
+  }
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
