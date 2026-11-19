@@ -4,12 +4,16 @@ const path = require('path');
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 const url = process.env.INGEST_URL || 'http://localhost:8080/ingest';
 const apiKey = process.env.API_KEY || 'dev-key';
-const intervalMs = Number(process.env.INTERVAL_MS || config.intervalMs);
 const durationSec = Number(process.env.DURATION_SEC || config.durationSec);
 
-if (!(intervalMs >= 20 && intervalMs <= 100)) {
-  console.error('intervalMs must be between 20 and 100');
-  process.exit(1);
+const intervalFor = (sensor) => Number(process.env.INTERVAL_MS || sensor.intervalMs);
+
+for (const sensor of config.sensors) {
+  const interval = intervalFor(sensor);
+  if (!(interval >= 20 && interval <= 100)) {
+    console.error(`intervalMs for ${sensor.sensor_id} must be between 20 and 100`);
+    process.exit(1);
+  }
 }
 
 const stats = { sent: 0, ok: 0, errors: 0 };
@@ -48,13 +52,14 @@ const runSensor = async (sensor, endTime) => {
       location: sensor.location,
       measured_at: new Date().toISOString(),
     });
-    await sleep(Math.max(0, intervalMs - (Date.now() - started)));
+    await sleep(Math.max(0, intervalFor(sensor) - (Date.now() - started)));
   }
 };
 
 const main = async () => {
   const endTime = Date.now() + durationSec * 1000;
-  console.log(`start: ${config.sensors.length} sensors, every ${intervalMs} ms, ${durationSec} s, target ${url}`);
+  const intervals = config.sensors.map((s) => `${s.sensor_id}=${intervalFor(s)}ms`).join(', ');
+  console.log(`start: ${config.sensors.length} sensors, intervals ${intervals}, ${durationSec} s, target ${url}`);
   const timer = setInterval(() => {
     console.log(`sent=${stats.sent} ok=${stats.ok} errors=${stats.errors}`);
   }, 5000);

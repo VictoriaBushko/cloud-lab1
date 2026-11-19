@@ -98,8 +98,9 @@ exports.handler = async (event) => {
     measured_at: message.measured_at,
   };
 
+  let sent;
   try {
-    await sqs.send(
+    sent = await sqs.send(
       new SendMessageCommand({
         QueueUrl: process.env.QUEUE_URL,
         MessageBody: JSON.stringify(clean),
@@ -110,5 +111,5 @@ exports.handler = async (event) => {
     return reply(500, { error: 'queue unavailable' });
   }
 
-  return reply(202, { status: 'accepted' });
+  return reply(202, { status: 'accepted', message_id: sent.MessageId });
 };
