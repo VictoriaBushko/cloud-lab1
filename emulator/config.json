@@ -1,0 +1,30 @@
+{
+  "intervalMs": 50,
+  "durationSec": 300,
+  "sensors": [
+    {
+      "sensor_id": "temp-01",
+      "sensor_type": "temperature",
+      "unit": "C",
+      "min": 15,
+      "max": 30,
+      "location": { "lat": 50.4501, "lon": 30.5234 }
+    },
+    {
+      "sensor_id": "hum-01",
+      "sensor_type": "humidity",
+      "unit": "%",
+      "min": 30,
+      "max": 80,
+      "location": { "lat": 50.4547, "lon": 30.5238 }
+    },
+    {
+      "sensor_id": "light-01",
+      "sensor_type": "light",
+      "unit": "lux",
+      "min": 0,
+      "max": 1000,
+      "location": { "lat": 50.4476, "lon": 30.5199 }
+    }
+  ]
+}
