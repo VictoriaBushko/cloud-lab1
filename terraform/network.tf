@@ -48,3 +48,33 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_lambda" {
   from_port                    = 3306
   to_port                      = 3306
 }
+
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.dynamodb"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_vpc.main.default_route_table_id]
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_vpc.main.default_route_table_id]
+}
+
+resource "aws_vpc_security_group_egress_rule" "lambda_to_dynamodb" {
+  security_group_id = aws_security_group.lambda.id
+  prefix_list_id    = aws_vpc_endpoint.dynamodb.prefix_list_id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+}
+
+resource "aws_vpc_security_group_egress_rule" "lambda_to_s3" {
+  security_group_id = aws_security_group.lambda.id
+  prefix_list_id    = aws_vpc_endpoint.s3.prefix_list_id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+}

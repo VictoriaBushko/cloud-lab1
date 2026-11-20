@@ -1,27 +1,38 @@
-Емулятор датчиків:
+Емулятор датчиків
 
-Емулює три датчики: температуру, вологість і освітленість. Кожен датчик надсилає вимірювання окремим POST-запитом у JSON з полями sensor_id, sensor_type, value, unit, location (lat, lon) і measured_at (UTC, ISO 8601). Раз на 5 секунд і в кінці роботи у журнал виводиться кількість надісланих повідомлень і помилок.
+Емулює три датчики (температура, вологість, освітленість) і камеру. Кожен датчик шле вимірювання окремим POST у JSON: sensor_id, sensor_type, value, unit, location і measured_at. Раз на 5 секунд і в кінці емулятор виводить, скільки повідомлень надіслано і скільки було помилок.
 
-Налаштування в config.json:
+Камера раз на 10-30 секунд просить підписане посилання, завантажує знімок (PNG до 1 МБ) у S3 і потім шле в /ingest повідомлення з object_key. Докладніше в docs/BLOB.md.
 
-intervalMs: у кожного датчика в списку sensors свій період надсилання, від 20 до 100 мс.
-durationSec: скільки секунд працює емулятор (для демонстрації 300-600).
-sensors: список датчиків із діапазоном значень і координатами.
+config.json
 
-Змінні середовища (перекривають config.json):
+- durationSec: скільки секунд працює емулятор
+- sensors: список датчиків, у кожного свій intervalMs (від 20 до 100 мс), діапазон значень і координати
+- cameras: список камер з періодом minIntervalSec і maxIntervalSec
 
-INGEST_URL: адреса приймача, за замовчуванням http://localhost:8080/ingest.
-API_KEY: ключ для заголовка x-api-key, за замовчуванням dev-key.
-INTERVAL_MS і DURATION_SEC: період і тривалість.
+Змінні середовища
 
-Запуск локально (потрібен Node 20):
+Перекривають config.json:
 
+- INGEST_URL: адреса приймача, за замовчуванням http://localhost:8080/ingest
+- API_KEY: ключ для заголовка x-api-key, за замовчуванням dev-key
+- INTERVAL_MS, DURATION_SEC: період і тривалість
+- NO_CAMERA=1: вимкнути камеру (для локального mock-receiver)
+
+Запуск
+
+Локально:
+
+```
 node mock-receiver.js
-node emulator.js
+NO_CAMERA=1 node emulator.js
+```
 
-Запуск у контейнері:
+У контейнері:
 
+```
 docker build -t sensor-emulator .
-docker run --rm -e INGEST_URL=http://host.docker.internal:8080/ingest sensor-emulator
+docker run --rm -e NO_CAMERA=1 -e INGEST_URL=http://host.docker.internal:8080/ingest sensor-emulator
+```
 
-Ключ API не зберігається в репозиторії, у хмару він передається через змінну середовища API_KEY.
+Ключ API у репозиторії не зберігається, у хмару він передається через змінну API_KEY.

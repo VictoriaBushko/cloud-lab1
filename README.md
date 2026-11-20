@@ -1,56 +1,54 @@
-Cloud Lab 3: обробка даних з IoT-сенсорів (serverless)
+Cloud Lab 3
 
-Конвеєр обробки подій: емулятор датчиків надсилає вимірювання через REST у чергу SQS, функції AWS Lambda обробляють повідомлення і зберігають результати в MySQL, окремий запит повертає історію вимірювань.
+Емулятор шле вимірювання на API Gateway, звідти вони йдуть у чергу SQS, їх обробляє Lambda і зберігає в MySQL (RDS). Історію можна отримати окремим запитом. Сирі дані ще пишуться в DynamoDB, а знімки з камери лежать у S3.
 
-**Публічна адреса приймача:** https://wua63fmjyd.execute-api.eu-central-1.amazonaws.com/ingest (діє лише під час демонстрації)
+Адреса приймача:
 
-Архітектура
+Папки
 
-Схема і опис компонентів у `docs/ARCHITECTURE.md`. Коротко: емулятор → API Gateway → Lambda ingest → SQS → Lambda processor → RDS MySQL; історія читається через GET /sensors/{sensor_id}/history.
+- emulator - емулятор датчиків і камери
+- functions/ingest - функція приймання
+- functions/worker - обробка, історія, посилання для знімків
+- terraform - інфраструктура
+- docs - документація
 
-Структура
-emulator/ — емулятор датчиків (Node.js), Dockerfile, інструкція
-functions/ingest/ — функція приймання (валідація і запис у чергу)
-functions/worker/ — функції processor (обробка) і history (читання)
-terraform/ — уся інфраструктура в AWS
-docs/ — документація
+Запуск
 
-Розгортання
+```
 cd functions/worker
 npm install --omit=dev
 cd ../../terraform
 terraform init
 terraform apply
+```
 
+Адреса і ключ:
 
-Адреса приймача і ключ API:
+```
+URL=$(terraform output -raw ingest_url)
+KEY=$(terraform output -raw api_key)
+API=$(terraform output -raw api_url)
+```
 
-terraform output -raw ingest_url
-terraform output -raw api_key
+Емулятор:
 
+```
+cd ../emulator
+INGEST_URL=$URL API_KEY=$KEY node emulator.js
+```
 
-Запуск емулятора
+Історія датчика:
 
-cd emulator
-INGEST_URL=<адреса> API_KEY=<ключ> node emulator.js
-
-
-Докладніше в `emulator/README.md`.
-
-Перевірка історії
-
-curl -s -H “x-api-key: $KEY” “$API/sensors/temp-01/history?limit=5”
-
+```
+curl -s -H "x-api-key: $KEY" "$API/sensors/temp-01/history?limit=5"
+```
 
 Документація
 
-- `docs/ARCHITECTURE.md` — архітектура
-- `docs/INGEST.md` — приймання даних
-- `docs/PROCESSING.md` — обробка функціями
-- `docs/DATA.md` — база і історія
-- `docs/DLQ.md` — черга недоставлених повідомлень
-
-Видалення
-
-cd terraform
-terraform destroy
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md): архітектура
+- [INGEST.md](docs/INGEST.md): приймання даних
+- [PROCESSING.md](docs/PROCESSING.md): обробка
+- [DATA.md](docs/DATA.md): база і історія
+- [DLQ.md](docs/DLQ.md): черга недоставлених повідомлень
+- [NOSQL.md](docs/NOSQL.md): сирі дані в DynamoDB
+- [BLOB.md](docs/BLOB.md): знімки камери в S3

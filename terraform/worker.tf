@@ -19,6 +19,16 @@ data "aws_iam_policy_document" "worker" {
     actions   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
     resources = [aws_sqs_queue.measurements.arn]
   }
+
+  statement {
+    actions   = ["dynamodb:PutItem", "dynamodb:Query"]
+    resources = [aws_dynamodb_table.raw.arn]
+  }
+
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.images.arn}/images/*"]
+  }
 }
 
 resource "aws_iam_role_policy" "worker" {
@@ -54,10 +64,12 @@ resource "aws_lambda_function" "processor" {
 
   environment {
     variables = {
-      DB_HOST     = aws_db_instance.main.address
-      DB_USER     = aws_db_instance.main.username
-      DB_PASSWORD = random_password.db.result
-      DB_NAME     = aws_db_instance.main.db_name
+      DB_HOST       = aws_db_instance.main.address
+      DB_USER       = aws_db_instance.main.username
+      DB_PASSWORD   = random_password.db.result
+      DB_NAME       = aws_db_instance.main.db_name
+      RAW_TABLE     = aws_dynamodb_table.raw.name
+      IMAGES_BUCKET = aws_s3_bucket.images.bucket
     }
   }
 
@@ -95,11 +107,13 @@ resource "aws_lambda_function" "history" {
 
   environment {
     variables = {
-      DB_HOST     = aws_db_instance.main.address
-      DB_USER     = aws_db_instance.main.username
-      DB_PASSWORD = random_password.db.result
-      DB_NAME     = aws_db_instance.main.db_name
-      API_KEY     = random_password.api_key.result
+      DB_HOST       = aws_db_instance.main.address
+      DB_USER       = aws_db_instance.main.username
+      DB_PASSWORD   = random_password.db.result
+      DB_NAME       = aws_db_instance.main.db_name
+      API_KEY       = random_password.api_key.result
+      RAW_TABLE     = aws_dynamodb_table.raw.name
+      IMAGES_BUCKET = aws_s3_bucket.images.bucket
     }
   }
 

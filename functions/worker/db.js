@@ -36,6 +36,7 @@ const ensureSchema = () => {
         'lon DOUBLE NOT NULL, ' +
         'status VARCHAR(16) NOT NULL, ' +
         'note VARCHAR(128) NULL, ' +
+        'object_key VARCHAR(200) NULL, ' +
         'PRIMARY KEY (sensor_id, measured_at)' +
         ') ENGINE=InnoDB'
     ).catch((err) => {

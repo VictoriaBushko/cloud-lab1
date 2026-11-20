@@ -1,4 +1,8 @@
 const { query, ensureSchema, toDbTime } = require('./db');
+const { putRaw } = require('./raw');
+const { headImage } = require('./images');
+
+const MAX_IMAGE_SIZE = 1048576;
 
 const previousValue = async (sensorId, measuredAt) => {
   const rows = await query(
@@ -48,16 +52,29 @@ const processLight = async (m) => {
   return { value, unit, status: 'ok', note: null };
 };
 
+const processCamera = async (m) => {
+  if (!m.object_key) {
+    throw new Error('camera message without object_key');
+  }
+  const head = await headImage(m.object_key);
+  const size = head.ContentLength;
+  if (size > MAX_IMAGE_SIZE) {
+    return { value: size, unit: 'bytes', status: 'out_of_range', note: 'image larger than 1 MB' };
+  }
+  return { value: size, unit: 'bytes', status: 'ok', note: null };
+};
+
 const processors = {
   temperature: processTemperature,
   humidity: processHumidity,
   light: processLight,
+  camera: processCamera,
 };
 
 const save = (m, r) =>
   query(
-    'INSERT INTO measurements (sensor_id, measured_at, sensor_type, `value`, unit, lat, lon, status, note) ' +
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE sensor_id = sensor_id',
+    'INSERT INTO measurements (sensor_id, measured_at, sensor_type, `value`, unit, lat, lon, status, note, object_key) ' +
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE sensor_id = sensor_id',
     [
       m.sensor_id,
       toDbTime(m.measured_at),
@@ -68,6 +85,7 @@ const save = (m, r) =>
       m.location.lon,
       r.status,
       r.note,
+      m.object_key || null,
     ]
   );
 
@@ -77,6 +95,7 @@ const processRecord = async (record) => {
   if (!process) {
     throw new Error(`unknown sensor_type ${m.sensor_type}`);
   }
+  await putRaw(m);
   const result = await process(m);
   await save(m, result);
   if (result.status !== 'ok') {

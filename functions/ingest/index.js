@@ -5,7 +5,8 @@ const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const sqs = new SQSClient({});
 const ssm = new SSMClient({});
 
-const SENSOR_TYPES = ['temperature', 'humidity', 'light'];
+const SENSOR_TYPES = ['temperature', 'humidity', 'light', 'camera'];
+const OBJECT_KEY = /^images\/[A-Za-z0-9_-]{1,64}\/[A-Za-z0-9._-]{1,128}$/;
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 
 let cachedKey;
@@ -57,6 +58,14 @@ const validate = (m) => {
   ) {
     return 'measured_at must be a UTC time in ISO 8601 format';
   }
+  if (m.sensor_type === 'camera') {
+    if (typeof m.object_key !== 'string' || !OBJECT_KEY.test(m.object_key)) {
+      return 'object_key is required for camera';
+    }
+    if (!m.object_key.startsWith(`images/${m.sensor_id}/`)) {
+      return 'object_key must belong to the sensor';
+    }
+  }
   return null;
 };
 
@@ -97,6 +106,9 @@ exports.handler = async (event) => {
     location: { lat: message.location.lat, lon: message.location.lon },
     measured_at: message.measured_at,
   };
+  if (message.sensor_type === 'camera') {
+    clean.object_key = message.object_key;
+  }
 
   let sent;
   try {
@@ -108,7 +120,7 @@ exports.handler = async (event) => {
     );
   } catch (err) {
     console.error('queue send failed', err);
-    return reply(500, { error: 'queue unavailable' });
+    return reply(500, { error: 'internal error' });
   }
 
   return reply(202, { status: 'accepted', message_id: sent.MessageId });

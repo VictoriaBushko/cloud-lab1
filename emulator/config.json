@@ -28,5 +28,13 @@
       "max": 1000,
       "location": { "lat": 50.4476, "lon": 30.5199 }
     }
+  ],
+  "cameras": [
+    {
+      "sensor_id": "cam-01",
+      "minIntervalSec": 10,
+      "maxIntervalSec": 30,
+      "location": { "lat": 50.4489, "lon": 30.5225 }
+    }
   ]
 }
